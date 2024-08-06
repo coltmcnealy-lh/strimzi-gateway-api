@@ -28,9 +28,9 @@ spec:
           value:
             spec:
               ports:
-              # Port 9092 on your laptop gets forwarded to NodePort 39092 on the KIND cluster.
+              # Port 9092 on your laptop gets forwarded to NodePort 30992 on the KIND cluster.
               - name: kafka-port
-                nodePort: 39092
+                nodePort: 30992
                 port: 9092
                 protocol: TCP
                 targetPort: 9092

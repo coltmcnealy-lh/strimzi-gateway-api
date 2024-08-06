@@ -1,0 +1,35 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  annotations:
+    strimzi.io/next-node-ids: '[10-100]'
+  labels:
+    strimzi.io/cluster: gateway-api-test
+  name: broker
+  namespace: default
+spec:
+  replicas: 3
+  roles:
+  - broker
+  storage:
+    class: standard
+    size: 10G
+    type: persistent-claim
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  annotations:
+    strimzi.io/next-node-ids: '[0-9]'
+  labels:
+    strimzi.io/cluster: gateway-api-test
+  name: controller
+  namespace: default
+spec:
+  replicas: 1
+  roles:
+  - controller
+  storage:
+    class: standard
+    size: 10G
+    type: persistent-claim

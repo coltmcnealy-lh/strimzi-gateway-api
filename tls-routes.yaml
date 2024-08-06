@@ -1,0 +1,83 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: gateway-api-test-broker-10
+  namespace: default
+spec:
+  hostnames:
+  - broker-10.strimzi.gateway.api.test
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: my-gateway
+    namespace: default
+    sectionName: kafka-listener
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: gateway-api-test-broker-obiwan-10
+      port: 9092
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: gateway-api-test-broker-11
+  namespace: default
+spec:
+  hostnames:
+  - broker-11.strimzi.gateway.api.test
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: my-gateway
+    namespace: default
+    sectionName: kafka-listener
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: gateway-api-test-broker-obiwan-11
+      port: 9092
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: gateway-api-test-broker-12
+  namespace: default
+spec:
+  hostnames:
+  - broker-12.strimzi.gateway.api.test
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: my-gateway
+    namespace: default
+    sectionName: kafka-listener
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: gateway-api-test-broker-obiwan-12
+      port: 9092
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: gateway-api-test-bootstrap
+  namespace: default
+spec:
+  hostnames:
+  - bootstrap.strimzi.gateway.api.test
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: my-gateway
+    namespace: default
+    sectionName: kafka-listener
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: gateway-api-test-kafka-bootstrap
+      port: 9092

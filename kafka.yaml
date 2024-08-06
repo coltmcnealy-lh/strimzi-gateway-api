@@ -1,45 +1,40 @@
----
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
-  name: my-kafka
+  name: gateway-api-test
   namespace: default
   annotations:
-    strimzi.io/node-pools: enabled
     strimzi.io/kraft: enabled
+    strimzi.io/node-pools: enabled
 spec:
+  entityOperator:
+    # We'll create a kafka topic and user so we need these operators.
+    topicOperator: {}
+    userOperator: {}
   kafka:
-    version: 3.7.0
+    authorization:
+      type: simple
     listeners:
-    - name: gw-api
+    - authentication:
+        type: scram-sha-512
+      configuration:
+        brokerCertChainAndKey:
+          certificate: tls.crt
+          key: tls.key
+          secretName: my-certificate
+        brokers:
+        - advertisedHost: broker-10.strimzi.gateway.api.test
+          advertisedPort: 9092
+          broker: 10
+        - advertisedHost: broker-11.strimzi.gateway.api.test
+          advertisedPort: 9092
+          broker: 11
+        - advertisedHost: broker-12.strimzi.gateway.api.test
+          advertisedPort: 9092
+          broker: 12
+        createBootstrapService: true
+      name: obiwan
       port: 9092
+      tls: true
       type: cluster-ip
-      tls: false
-    config:
-      auto.topics.create.enable: "true"
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: controller
-  labels:
-    strimzi.io/cluster: my-kafka
-spec:
-  replicas: 3
-  roles:
-  - controller
-  storage:
-    type: ephemeral
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: broker
-  labels:
-    strimzi.io/cluster: my-kafka
-spec:
-  replicas: 3
-  roles:
-  - broker
-  storage:
-    type: ephemeral
+    version: 3.7.1

@@ -43,12 +43,12 @@ nodes:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
   extraPortMappings:
-  - containerPort: 39092
+  - containerPort: 30992
     hostPort: 9092
     protocol: TCP
 ```
 
-If you inspect the `kind-config.yaml` file, you will notice the port mapping of `hostPort: 9092` being mapped to `containerPort: 39092`. That means that the port 9092 on your own laptop will be forwarded by docker to port 39092 on the Kubernetes Node (which, in KIND, is just a docker container running on your laptop). We will use this fact when installing Envoy Gateway.
+If you inspect the `kind-config.yaml` file, you will notice the port mapping of `hostPort: 9092` being mapped to `containerPort: 30992`. That means that the port 9092 on your own laptop will be forwarded by docker to port 30992 on the Kubernetes Node (which, in KIND, is just a docker container running on your laptop). We will use this fact when installing Envoy Gateway.
 
 ```
 kind create cluster --name strimzi-gw-api --config kind-config.yaml
@@ -96,9 +96,9 @@ spec:
           value:
             spec:
               ports:
-              # Port 9092 on your laptop gets forwarded to NodePort 39092 on the KIND cluster.
+              # Port 9092 on your laptop gets forwarded to NodePort 30992 on the KIND cluster.
               - name: kafka-port
-                nodePort: 39092
+                nodePort: 30992
                 port: 9092
                 protocol: TCP
                 targetPort: 9092
@@ -116,6 +116,10 @@ spec:
     port: 9092
     tls:
       mode: Passthrough
+```
+
+```
+kubectl apply -f envoy-gateway-base.yaml
 ```
 
 Once that is done, you should see some pods in the `envoy-gateway-system` namespace, like the following:
@@ -182,6 +186,10 @@ metadata:
   namespace: default
 spec:
   selfSigned: {}
+```
+
+```
+kubectl apply -f certificate.yaml
 ```
 
 You should be able to see a `Secret` named `my-certificate` in the `default` namespace.
@@ -268,6 +276,9 @@ kind: Kafka
 metadata:
   name: gateway-api-test
   namespace: default
+  annotations:
+    strimzi.io/kraft: enabled
+    strimzi.io/node-pools: enabled
 spec:
   entityOperator:
     # We'll create a kafka topic and user so we need these operators.
@@ -300,6 +311,10 @@ spec:
       tls: true
       type: cluster-ip
     version: 3.7.1
+```
+
+```
+kubectl apply -f kafka.yaml
 ```
 
 Next, we need to create the `KafkaNodePool`s for the controllers and the brokers. We will ensure that the controller node id's start at `0` and the brokers start at `10`. Our cluster will only have one controller, but in production it's recommended to use 3. Note that before [KIP-853](https://cwiki.apache.org/confluence/display/KAFKA/KIP-853%3A+KRaft+Controller+Membership+Changes) is completed in Apache Kafka and supported in Strimzi, it is not possible to change the number of controllers in your cluster once it's deployed. Hopefully, that will be addressed in the upcoming Kafka `3.9.0` release and soon after in Strimzi.
@@ -335,14 +350,31 @@ metadata:
 spec:
   replicas: 1
   roles:
-  - broker
+  - controller
   storage:
     class: standard
     size: 10G
     type: persistent-claim
 ```
 
+```
+kubectl apply -f kafka-node-pools.yaml
+```
+
 At this point, you should see the Kafka pods up and running.
+
+```
+NAME                                                READY   STATUS    RESTARTS   AGE
+cert-manager-84489bc478-7cxds                       1/1     Running   0          7m22s
+cert-manager-cainjector-7477d56b47-ct8dv            1/1     Running   0          7m22s
+cert-manager-webhook-6d5cb854fc-2rx9p               1/1     Running   0          7m22s
+gateway-api-test-broker-10                          1/1     Running   0          82s
+gateway-api-test-broker-11                          1/1     Running   0          82s
+gateway-api-test-broker-12                          1/1     Running   0          82s
+gateway-api-test-controller-0                       1/1     Running   0          82s
+gateway-api-test-entity-operator-6657fbc775-w4b65   2/2     Running   0          44s
+strimzi-cluster-operator-6948497896-s7q46           1/1     Running   0          2m23s
+```
 
 ### Creating `TLSRoute`s
 
@@ -399,7 +431,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
-  name: gateway-api-test-broker-11
+  name: gateway-api-test-broker-12
   namespace: default
 spec:
   hostnames:
@@ -437,6 +469,10 @@ spec:
       kind: Service
       name: gateway-api-test-kafka-bootstrap
       port: 9092
+```
+
+```
+kubectl apply -f tls-routes.yaml
 ```
 
 ### Creating a Kafka Client Config
@@ -496,6 +532,20 @@ spec:
   replicas: 3
 ```
 
+```
+kubectl apply -f user-and-topic.yaml
+```
+
+```
+-> kubectl get kafkauser
+NAME     CLUSTER            AUTHENTICATION   AUTHORIZATION   READY
+obiwan   gateway-api-test   scram-sha-512    simple          True
+
+-> kubectl get kafkatopic
+NAME       CLUSTER            PARTITIONS   REPLICATION FACTOR   READY
+my-topic   gateway-api-test   12           3                    True
+```
+
 You should now see a `Secret` named `obiwan`. If you inspect it, you'll see a `sasl.jaas.config` field which contains a base64-encoded String that can be passed for the Kafka `sasl.jaas.config` configuration property.
 
 To access Kafka, we need to create a client configuration property. We will need to do the following:
@@ -522,6 +572,12 @@ sasl.mechanism=SCRAM-SHA-512
 ssl.truststore.location=/tmp/strimzi-kafka-truststore.jks
 ssl.truststore.password=kenobi
 EOF
+```
+
+When running the script make sure to type "yes" to add the certificate to the JKS keystore.
+```
+./create-kafka-config.sh
+cat /tmp/kafka-client-config.properties
 ```
 
 ### Accessing Kafka

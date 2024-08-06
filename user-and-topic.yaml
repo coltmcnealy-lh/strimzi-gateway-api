@@ -1,0 +1,48 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: obiwan
+  namespace: default
+  labels:
+    strimzi.io/cluster: gateway-api-test
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+    - resource:
+        type: topic
+        name: "*"
+        patternType: literal
+      operations:
+        - 'All'
+      host: "*"
+    - resource:
+        type: group
+        name: "*"
+        patternType: literal
+      operations:
+        - 'All'
+      host: "*"
+    - resource:
+        type: cluster
+      operations:
+        - 'All'
+    - resource:
+        type: transactionalId
+        name: "*"
+        patternType: literal
+      operations:
+        - 'All'
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  namespace: default
+  labels:
+    strimzi.io/cluster: gateway-api-test
+spec:
+  partitions: 12
+  replicas: 3
