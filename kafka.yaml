@@ -1,0 +1,45 @@
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-kafka
+  namespace: default
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 3.7.0
+    listeners:
+    - name: gw-api
+      port: 9092
+      type: cluster-ip
+      tls: false
+    config:
+      auto.topics.create.enable: "true"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: controller
+  labels:
+    strimzi.io/cluster: my-kafka
+spec:
+  replicas: 3
+  roles:
+  - controller
+  storage:
+    type: ephemeral
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-kafka
+spec:
+  replicas: 3
+  roles:
+  - broker
+  storage:
+    type: ephemeral
