@@ -358,7 +358,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-broker-10
-  namespace: littlehorse
+  namespace: default
 spec:
   hostnames:
   - broker-10.strimzi.gateway.api.test
@@ -379,7 +379,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-broker-11
-  namespace: littlehorse
+  namespace: default
 spec:
   hostnames:
   - broker-11.strimzi.gateway.api.test
@@ -400,7 +400,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-broker-11
-  namespace: littlehorse
+  namespace: default
 spec:
   hostnames:
   - broker-12.strimzi.gateway.api.test
@@ -416,11 +416,140 @@ spec:
       kind: Service
       name: gateway-api-test-broker-obiwan-12
       port: 9092
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: gateway-api-test-bootstrap
+  namespace: default
+spec:
+  hostnames:
+  - bootstrap.strimzi.gateway.api.test
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: my-gateway
+    namespace: default
+    sectionName: kafka-listener
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: gateway-api-test-kafka-bootstrap
+      port: 9092
 ```
 
 ### Creating a Kafka Client Config
 
+In order to access Kafka, we will create a `KafkaUser` that will create credentials as a Kubernetes `Secret` for us to access the secured Kafka cluster. We'll also create a `KafkaTopic` to play with in the next section.
+
+First, create a `KafkaUser` and `KafkaTopic`:
+
+```
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: obiwan
+  namespace: default
+  labels:
+    strimzi.io/cluster: gateway-api-test
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+    - resource:
+        type: topic
+        name: "*"
+        patternType: literal
+      operations:
+        - 'All'
+      host: "*"
+    - resource:
+        type: group
+        name: "*"
+        patternType: literal
+      operations:
+        - 'All'
+      host: "*"
+    - resource:
+        type: cluster
+      operations:
+        - 'All'
+    - resource:
+        type: transactionalId
+        name: "*"
+        patternType: literal
+      operations:
+        - 'All'
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  namespace: default
+  labels:
+    strimzi.io/cluster: gateway-api-test
+spec:
+  partitions: 12
+  replicas: 3
+```
+
+You should now see a `Secret` named `obiwan`. If you inspect it, you'll see a `sasl.jaas.config` field which contains a base64-encoded String that can be passed for the Kafka `sasl.jaas.config` configuration property.
+
+To access Kafka, we need to create a client configuration property. We will need to do the following:
+
+1. Download the `sasl.jaas.config` from the `Secret` created for the `KafkaUser`.
+2. Download the CA Public Cert created by Cert Manager.
+3. Convert the CA Cert from the previous step into the JKS format so that we can use it in our Kafka config.
+
+The following script does all of that and writes a Kafka config file to `/tmp/kafka-client-config.properties`.
+
+```
+#!/bin/bash
+
+kubectl get secret my-certificate -o json | jq '.data."ca.crt"' | tr -d '"' | base64 --decode > /tmp/ca.crt
+keytool -importcert -alias ca -file /tmp/ca.crt -keystore /tmp/strimzi-kafka-truststore.jks -storepass kenobi
+
+JAAS_CONFIG=$(kubectl get secret obiwan -o json | jq '.data."sasl.jaas.config"' | tr -d '"' | base64 --decode)
+
+cat <<EOF > /tmp/kafka-client-config.properties
+bootstrap.servers=bootstrap.strimzi.gateway.api.test:9092
+sasl.jaas.config=$JAAS_CONFIG
+security.protocol=SASL_SSL
+sasl.mechanism=SCRAM-SHA-512
+ssl.truststore.location=/tmp/strimzi-kafka-truststore.jks
+ssl.truststore.password=kenobi
+EOF
+```
+
 ### Accessing Kafka
+
+The last thing we need to do is use our Kafka cluster! We'll use the Strimzi docker images and the `kafka-console-{producer,consumer}.sh` scripts.
+
+In one terminal, start a consumer:
+
+```
+docker run -it --rm --network host \
+    -v /tmp/:/tmp/ quay.io/strimzi/kafka:0.42.0-kafka-3.7.1 \
+    bin/kafka-console-consumer.sh \
+    --bootstrap-server bootstrap.strimzi.gateway.api.test:9092 \
+    --topic my-topic \
+    --from-beginning \
+    --consumer.config /tmp/kafka-client-config.properties
+```
+
+And in another, start a producer:
+
+```
+docker run -it --rm --network host \
+    -v /tmp/:/tmp/ quay.io/strimzi/kafka:0.42.0-kafka-3.7.1 \
+    bin/kafka-console-producer.sh \
+    --bootstrap-server bootstrap.strimzi.gateway.api.test:9092 \
+    --topic my-topic \
+    --producer.config /tmp/kafka-client-config.properties
+```
 
 ## Conclusion
 
