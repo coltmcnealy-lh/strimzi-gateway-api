@@ -467,7 +467,7 @@ spec:
   - backendRefs:
     - group: ""
       kind: Service
-      name: gateway-api-test-kafka-bootstrap
+      name: gateway-api-test-kafka-obiwan-bootstrap
       port: 9092
 ```
 
