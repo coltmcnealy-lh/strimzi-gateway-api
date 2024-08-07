@@ -1,8 +1,12 @@
-# Accessing Kafka with the Gateway API
+# Strimzi, Envoy Gateway, and the Gateway API
+
+At [LittleHorse](https://littlehorse.dev), we use the [Gateway API](https://gateway-api.sigs.k8s.io) to allow external traffic into our kubernetes clusters. We will soon need to allow external clients to access our [Kafka](https://kafka.apache.org) clusters (managed by Strimzi, of course!) from outside ouf our Kubernetes clusters. We have so far been pleased with the performance and simplicity of [Envoy Gateway](https://gateway.envoyproxy.io/) as a Gateway Controller, which motivated this investigation into using Envoy Gateway to access our Kafka clusters.
 
 ## Background
 
 The [Gateway API](https://gateway-api.sigs.k8s.io/) in Kubernetes aims to replace the `Ingress` resource as the de facto standard for allowing external traffic to reach workloads running on Kubernetes. It addresses many shortcomings of the `Ingress` resource, including poor support for non-HTTP 1.0 traffic.
+
+![Strimzi and Envoy Gateway](./strimzi-envoy-gateway.png)
 
 ### Accessing Kafka
 
@@ -26,7 +30,7 @@ _NOTE: The `HTTPRoute` resource has reached GA in the Gateway API; however, the 
 
 ## Putting It Into Practice
 
-The rest of this blog post will walk through how to use `TLSRoute`s to access a Strimzi-managed Kafka cluster from outside of your Kubernetes cluster. We will use a [KIND](https://kind.sigs.k8s.io/) cluster, which allows us to run a Kubernetes cluster in docker containers on our local machine, and we will use [Envoy Gateway](https://gateway.envoyproxy.io/) as our implementation of the Gateway API.
+The rest of this blog post will walk through how to use `TLSRoute`s to access a Strimzi-managed Kafka cluster from outside of your Kubernetes cluster. We will use a [KIND](https://kind.sigs.k8s.io/) cluster, which allows us to run a Kubernetes cluster in docker containers on our local machine, and we will use Envoy Gateway as our implementation of the Gateway API.
 
 ### KIND Cluster Setup
 
