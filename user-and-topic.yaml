@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
   name: obiwan
-  namespace: default
+  namespace: strimzi
   labels:
     strimzi.io/cluster: gateway-api-test
 spec:
@@ -40,7 +40,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
   name: my-topic
-  namespace: default
+  namespace: strimzi
   labels:
     strimzi.io/cluster: gateway-api-test
 spec:

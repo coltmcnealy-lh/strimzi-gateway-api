@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: gateway-api-test
-  namespace: default
+  namespace: strimzi
   annotations:
     strimzi.io/kraft: enabled
     strimzi.io/node-pools: enabled

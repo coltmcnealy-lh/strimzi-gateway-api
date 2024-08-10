@@ -6,7 +6,7 @@ metadata:
   labels:
     strimzi.io/cluster: gateway-api-test
   name: broker
-  namespace: default
+  namespace: strimzi
 spec:
   replicas: 3
   roles:
@@ -24,7 +24,7 @@ metadata:
   labels:
     strimzi.io/cluster: gateway-api-test
   name: controller
-  namespace: default
+  namespace: strimzi
 spec:
   replicas: 1
   roles:

@@ -2,7 +2,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-broker-10
-  namespace: default
+  namespace: strimzi
 spec:
   hostnames:
   - broker-10.strimzi.gateway.api.test
@@ -10,7 +10,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: Gateway
     name: my-gateway
-    namespace: default
+    namespace: strimzi
     sectionName: kafka-listener
   rules:
   - backendRefs:
@@ -23,7 +23,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-broker-11
-  namespace: default
+  namespace: strimzi
 spec:
   hostnames:
   - broker-11.strimzi.gateway.api.test
@@ -31,7 +31,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: Gateway
     name: my-gateway
-    namespace: default
+    namespace: strimzi
     sectionName: kafka-listener
   rules:
   - backendRefs:
@@ -44,7 +44,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-broker-12
-  namespace: default
+  namespace: strimzi
 spec:
   hostnames:
   - broker-12.strimzi.gateway.api.test
@@ -52,7 +52,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: Gateway
     name: my-gateway
-    namespace: default
+    namespace: strimzi
     sectionName: kafka-listener
   rules:
   - backendRefs:
@@ -65,7 +65,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: gateway-api-test-bootstrap
-  namespace: default
+  namespace: strimzi
 spec:
   hostnames:
   - bootstrap.strimzi.gateway.api.test
@@ -73,7 +73,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: Gateway
     name: my-gateway
-    namespace: default
+    namespace: strimzi
     sectionName: kafka-listener
   rules:
   - backendRefs:
