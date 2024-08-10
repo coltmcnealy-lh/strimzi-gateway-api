@@ -177,18 +177,18 @@ This will create a `Gateway` resource, and the Envoy Gateway controller will dep
 ```
 -> kubectl get pods --namespace envoy-gateway-system
 NAME                                                 READY   STATUS    RESTARTS   AGE
-envoy-default-my-gateway-1c7c06f0-5446c7ff7b-vpd6m   1/2     Running   0          22s
+envoy-strimzi-my-gateway-1c7c06f0-5446c7ff7b-vpd6m   1/2     Running   0          22s
 envoy-gateway-8595cc9fbc-2bjn5                       1/1     Running   0          96s
 ```
 
-The second pod is the Envoy Gateway controller, which reconciles all Gateway API-related resources. The first `Pod` was created by the controller to route all traffic for the `my-gateway` `Gateway` which we created in the `default` namespace.
+The second pod is the Envoy Gateway controller, which reconciles all Gateway API-related resources. The first `Pod` was created by the controller to route all traffic for the `my-gateway` `Gateway` which we created in the `strimzi` namespace.
 
 Next, the most exciting part about the setup process is installing Strimzi. You can do it as follows:
 
 ```
 helm upgrade --install strimzi oci://quay.io/strimzi-helm/strimzi-kafka-operator \
     --version 0.42.0 \
-    --namespace default
+    --namespace strimzi
 ```
 
 Since the `TLSRoute` resource uses _passthrough TLS_, in which encryption is terminated at the Kafka broker pods, we'll need a TLS certificate to mount on the Kafka brokers. While we could use `openssl`, in this example we'll use another operator, [Cert Manager](https://cert-manager.io), to create TLS certificates for us using the `Certificate` resource.
@@ -197,7 +197,7 @@ You can install Cert Manager as follows:
 
 ```
 helm upgrade --install cert-manager jetstack/cert-manager \
-    --namespace default \
+    --namespace strimzi \
     --version v1.15.1 \
     --set installCRDs=true
 ```
@@ -242,7 +242,7 @@ spec:
 kubectl apply -f certificate.yaml
 ```
 
-You should be able to see a `Secret` named `my-certificate` in the `default` namespace.
+You should be able to see a `Secret` named `my-certificate` in the `strimzi` namespace.
 
 The last piece of setup is to configure your `/etc/hosts` file so that you can access Kafka from outside of the cluster. This is one of two hacks that we will use to get this example to work on your local KIND box—in real life, you would probably use real DNS records to point to your Kubernetes Cluster. In this case, we want to make `*.strimzi.gateway.api.test` point to `localhost` so that it ends up hitting the KIND node (which is just a docker container running on `localhost`).
 
